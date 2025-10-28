@@ -1,28 +1,70 @@
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import seaborn as sns
-import matplotlib.pyplot as plt
+def xor(a, b):
+    result = []
+    for i in range(1, len(b)):
+        result.append(str(int(a[i]) ^ int(b[i])))
+    return ''.join(result)
 
-data = pd.DataFrame({
-    'color_mean':[0.8,0.3,0.9,0.2,0.85,0.1,0.7,0.25],
-    'texture_var':[0.1,0.4,0.05,0.5,0.12,0.6,0.09,0.45],
-    'label':['Healthy','Diseased','Healthy','Diseased','Healthy','Diseased','Healthy','Diseased']
-})
+def mod2div(dividend, divisor):
+    pick = len(divisor)
+    tmp = dividend[0:pick]
 
-X = data[['color_mean','texture_var']]
-y = data['label']
-X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,random_state=42)
+    while pick < len(dividend):
+        if tmp[0] == '1':
+            tmp = xor(divisor, tmp) + dividend[pick]
+        else:
+            tmp = xor('0' * pick, tmp) + dividend[pick]
+        pick += 1
 
-svm = SVC(kernel='rbf', gamma='auto')
-svm.fit(X_train, y_train)
+    if tmp[0] == '1':
+        tmp = xor(divisor, tmp)
+    else:
+        tmp = xor('0' * pick, tmp)
 
-y_pred = svm.predict(X_test)
-print(classification_report(y_test, y_pred))
-print("Accuracy:", accuracy_score(y_test, y_pred))
+    return tmp
 
-sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, cmap='Greens')
-plt.title("SVM - Healthy vs Diseased Plants")
-plt.show()
+def encodeData(data, key):
+    appended_data = data + '0' * (len(key) - 1)
+    remainder = mod2div(appended_data, key)
+    return data + remainder
+
+data = input("Enter the binary data to transmit: ")
+key = input("Enter the binary key (divisor): ")
+
+print("Original Data: ", data)
+encoded = encodeData(data, key)
+print("Transmitted Data with CRC: ", encoded)
+
+'''Enter the binary data to transmit: 101100
+Enter the binary key (divisor): 1001
+Original Data: 101100
+Transmitted Data with CRC: 101100001'''
+
+print("\n")
+def calculate_checksum(data):
+    s = sum(data)
+    while s >> 8:
+        s = (s & 0xFF) + (s >> 8)
+    checksum = ~s & 0xFF
+    return checksum
+
+def verify_checksum(data, checksum):
+    total = sum(data) + checksum
+    while total >> 8:
+        total = (total & 0xFF) + (total >> 8)
+    return (total == 0xFF)
+
+input_str = input("Enter data bytes in hex (e.g. 12 34 56): ")
+data = [int(byte, 16) for byte in input_str.split()]
+
+checksum = calculate_checksum(data)
+
+print("Data:", [hex(b) for b in data])
+print("Calculated Checksum:", hex(checksum))
+
+result = "Success" if verify_checksum(data, checksum) else "Error Detected"
+print("Verification:", result)
+
+'''Enter data bytes in hex (e.g. 12 34 56): 12 34 56
+Data: ['0x12', '0x34', '0x56']
+Calculated Checksum: 0x63
+Verification: Success'''
