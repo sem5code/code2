@@ -13,14 +13,14 @@ A RESTful API for managing blog posts with user authentication using JWT tokens 
 ## Installation
 
 1. Install dependencies:
-\`\`\`bash
+
 npm install
-\`\`\`
+
 
 2. Start the server:
-\`\`\`bash
+
 npm start
-\`\`\`
+
 
 The server will run on http://localhost:3000
 
